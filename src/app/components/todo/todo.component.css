@@ -1,0 +1,213 @@
+
+.todo-container {
+  display: flex;
+  justify-content: center;
+  flex-wrap: nowrap;
+  gap: 20px;
+  padding: 20px;
+  background-image: url('/assets/images/pngtree-lined-paper-texture-ruled-paper-white-lined-paper-photo-photo-image_36705182.jpg'); /* تأكد أن المسار صحيح */
+  background-size: cover;
+  min-height: 100vh;
+  position: relative;
+}
+
+.list-column {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  flex: 1 1 320px;
+  max-width: 400px;
+  min-width: 300px;
+  border: 2px solid black;
+  border-radius: 8px;
+  padding: 15px;
+}
+
+/* meda*/
+@media (max-width: 1024px) {
+  .todo-container {
+    flex-direction: column;
+    align-items: center;
+    flex-wrap: nowrap;
+    overflow-y: auto;
+  }
+
+  .list-column {
+    width: 90%;
+    max-width: 500px;
+    flex-basis: auto;
+    margin-bottom: 20px;
+  }
+  .list-column:last-child {
+    margin-bottom: 0;
+  }
+}
+
+/* meda*/
+
+
+.todo-input-card {
+  width: 100%;
+  margin-bottom: 20px;
+}
+.full-width {
+  width: 100%;
+}
+.btn-add {
+  width: 100%;
+  margin-top: 15px;
+}
+.priority-label-form {
+  display: block;
+  margin-top: 10px;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+
+.item-count {
+  font-size: 0.85em;
+  color: #555;
+  margin-bottom: 15px;
+  text-align: center;
+}
+.head {
+  text-align: center;
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #333;
+}
+
+
+.priority-group {
+  margin-bottom: 15px;
+}
+.priority-label {
+  font-size: 0.9em;
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: #444;
+  text-transform: uppercase;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 4px;
+}
+
+.todo-item {
+  display: block;
+  margin-bottom: 8px;
+  border-radius: 4px;
+  cursor: move;
+}
+
+.todo-item.high-priority {
+  border-left: 5px solid #e53935;
+  background-color: #ffebee;
+}
+.todo-item.medium-priority {
+  border-left: 5px solid #fb8c00;
+  background-color: #fff3e0;
+}
+.todo-item.low-priority {
+  border-left: 5px solid #43a047;
+  background-color: #e8f5e9;
+}
+
+
+.todo-item.done-item .span {
+  text-decoration: line-through;
+  color: #777;
+}
+.todo-item.done-item {
+  opacity: 0.8;
+}
+
+
+.conten {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid black;
+  background-color: white;
+  border-radius: 5px;
+  font-size: 1em;
+}
+
+.todo-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+
+.span {
+  flex-grow: 1;
+  margin-right: 10px;
+  line-height: 1.4;
+  line-break: anywhere;
+}
+
+.delete-btn {
+  background-color: red;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8em;
+  flex-shrink: 0;
+}
+.delete-btn:hover {
+  background-color: darkred;
+}
+
+
+.todo-list-wrapper.drop-zone {
+  min-height: 271px;
+  border-radius: 6px;
+  padding: 10px;
+  margin-top: 10px;
+  box-sizing: border-box;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+
+
+.todo-list-wrapper.drop-zone.cdk-drop-list-receiving,
+.todo-list-wrapper.drop-zone.cdk-drop-list-dragging-over {
+  border-color: #27ae60 ;
+  background-color: rgba(46, 204, 113, 0.05) ;
+}
+
+
+
+.todo-item.cdk-drag-dragging {
+  box-shadow: 0 8px 20px rgba(0,0,0,0.25) !important;
+  opacity: 0.85 !important;
+  transform: scale(1.03) rotate(1deg) !important;
+  z-index: 1000;
+}
+
+/* مظهر الـ placeholder */
+.todo-placeholder.cdk-drag-placeholder {
+  background-color: rgba(0,0,0,0.05);
+  border: 2px dashed #b0b0b0;
+  min-height: 50px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  box-sizing: border-box;
+  display: block;
+  visibility: visible ;
+  opacity: 1;
+}
+
+
+#progress-list.todo-list-wrapper.drop-zone {
+  min-height: 533px;
+}
+
+#done-list.todo-list-wrapper.drop-zone {
+  min-height: 533px;
+}

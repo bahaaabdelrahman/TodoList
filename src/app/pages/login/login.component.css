@@ -1,0 +1,106 @@
+/* حاوية الشاشة الكاملة */
+.log {
+  height: 100vh;
+  /* ملء ارتفاع الشاشة */
+  margin: 0;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f1f1f1;
+}
+
+/* الحاوية الداخلية */
+.con {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* العنوان */
+.login-title {
+  text-align: center;
+  font-family: Arial, sans-serif;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+/* النموذج */
+.login-form {
+  width: 100%;
+  padding: 20px;
+  background-color: #ffffff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* الحقول */
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-control {
+  width: 100%;
+  padding: 10px;
+  font-size: 15px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+/* الزر */
+.submit-button {
+  width: 100%;
+  padding: 10px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  font-size: 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.submit-button:hover {
+  background-color: #218838;
+}
+
+/* رسالة الخطأ */
+.error-message {
+  color: red;
+  margin-top: 10px;
+  text-align: center;
+}
+
+/* رابط التسجيل */
+.signup-link {
+  text-align: center;
+  margin-top: 15px;
+}
+
+.signup-link a {
+  color: #007bff;
+  text-decoration: none;
+}
+
+.signup-link a:hover {
+  text-decoration: underline;
+}
+
+/* دعم الهواتف */
+@media (max-width: 480px) {
+  .login-form {
+    padding: 15px;
+  }
+
+  .form-control {
+    font-size: 14px;
+  }
+
+  .submit-button {
+    font-size: 15px;
+  }
+}
