@@ -117,16 +117,60 @@ exports.logout = async (req, res) => {
 // @access  Private
 exports.getMe = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).populate({
-      path: 'organizationId',
-      select: 'name description'
-    });
+    // 1. Fetch basic user details
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    let activeOrganizationDetails = null;
+    let currentUserRoleInActiveOrg = req.user.activeOrgRole; // Role from token
+
+    // 2. Check if there's an active organization context from the token
+    if (req.user.activeOrgId) {
+      // 3a. Fetch active organization details
+      const organization = await Organization.findById(req.user.activeOrgId).select('name description');
+      if (organization) {
+        activeOrganizationDetails = organization;
+        // Optionally, re-verify role from DB if needed, though token should be source of truth for active session role
+        // const userOrgMembership = await UserOrganization.findOne({
+        //   userId: user._id,
+        //   organizationId: req.user.activeOrgId
+        // });
+        // if (userOrgMembership) {
+        //   currentUserRoleInActiveOrg = userOrgMembership.role;
+        // }
+      } else {
+        // This case means activeOrgId in token refers to a non-existent/deleted org
+        // Decide how to handle: clear activeOrgId, return error, or just proceed without org details
+        console.warn(`User ${user._id} has activeOrgId ${req.user.activeOrgId} in token, but organization not found.`);
+        currentUserRoleInActiveOrg = null; // Clear role if org not found
+      }
+    }
+
+    // 4. Construct response
+    const responseData = {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+      // Include organization memberships if needed for a full profile view
+      // organizationMemberships: await UserOrganization.find({ userId: user._id }).populate('organizationId', 'name'), 
+      activeOrganization: activeOrganizationDetails,
+      activeOrganizationRole: currentUserRoleInActiveOrg
+    };
 
     res.status(200).json({
       success: true,
-      data: user
+      data: responseData
     });
   } catch (error) {
+    console.error('GetMe Error:', error);
     res.status(400).json({
       success: false,
       error: error.message
