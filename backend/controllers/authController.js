@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const Organization = require('../models/Organization');
+const UserOrganization = require('../models/UserOrganization');
 
 // @desc    Register user
 // @route   POST /api/auth/register
@@ -18,28 +19,38 @@ exports.register = async (req, res) => {
       });
     }
 
-    // Create or find organization
+    // 1. Create user
+    const newUser = await User.create({
+      name,
+      email,
+      password
+      // organizationId and role are removed as per new model structure
+    });
+
+    // 2. Create or find organization
     let organization = await Organization.findOne({ name: organizationName });
     
     if (!organization) {
       organization = await Organization.create({
         name: organizationName,
-        description: organizationDescription || ''
+        description: organizationDescription || '',
+        createdBy: newUser._id // Use newUser._id here
       });
     }
 
-    // Create user
-    const user = await User.create({
-      name,
-      email,
-      password,
-      organizationId: organization._id,
-      // First user in organization becomes admin
-      role: 'admin'
+    // 3. Create UserOrganization link
+    const userOrgRole = 'admin'; // First user in a new org is admin
+    await UserOrganization.create({
+        userId: newUser._id,
+        organizationId: organization._id,
+        role: userOrgRole,
+        invitedBy: newUser._id // User is self-creating/joining this first org
     });
 
-    sendTokenResponse(user, 201, res);
+    // 4. Send token response with active organization context
+    sendTokenResponse(newUser, 201, res, organization._id, userOrgRole);
   } catch (error) {
+    console.error('Registration Error:', error); // For better debugging
     res.status(400).json({
       success: false,
       error: error.message
@@ -124,16 +135,24 @@ exports.getMe = async (req, res) => {
 };
 
 // Helper function to get token from model, create cookie and send response
-const sendTokenResponse = (user, statusCode, res) => {
-  // Create token
-  const token = user.getSignedJwtToken();
+const sendTokenResponse = (user, statusCode, res, activeOrgId, activeOrgRole) => {
+  // Create token with active organization context
+  const token = user.getSignedJwtToken(activeOrgId, activeOrgRole);
 
-  const options = {
-    expiresIn: process.env.JWT_EXPIRE,
-  };
+  // const options = { // Options for setting a cookie, not used here as token is in JSON response
+  //   expires: new Date(
+  //     Date.now() + process.env.JWT_COOKIE_EXPIRE * 24 * 60 * 60 * 1000
+  //   ),
+  //   httpOnly: true
+  // };
+  // if (process.env.NODE_ENV === 'production') {
+  //   options.secure = true;
+  // }
 
-  res.status(statusCode).json({
-    success: true,
-    token
-  });
+  res.status(statusCode)
+    // .cookie('token', token, options) // Example if sending token as a cookie
+    .json({
+      success: true,
+      token
+    });
 };
