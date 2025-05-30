@@ -31,6 +31,7 @@ app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/organizations', require('./routes/organizationRoutes'));
 app.use('/api/tasks', require('./routes/taskRoutes'));
 app.use('/api/actions', require('./routes/actionRoutes'));
+app.use('/api', require('./routes/userOrganizationRoutes'));
 
 // Basic route
 app.get('/', (req, res) => {

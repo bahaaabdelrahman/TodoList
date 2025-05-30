@@ -23,19 +23,11 @@ const UserSchema = new mongoose.Schema({
     required: [true, 'Please add a password'],
     minlength: [6, 'Password must be at least 6 characters'],
     select: false
-  },
-  organizationId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Organization',
-    required: true
-  },
-  role: {
-    type: String,
-    enum: ['admin', 'member'],
-    default: 'member'
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
 });
 
 // Encrypt password using bcrypt
@@ -51,14 +43,31 @@ UserSchema.pre('save', async function(next) {
   next();
 });
 
+// Virtual for organizationMemberships
+UserSchema.virtual('organizationMemberships', {
+  ref: 'UserOrganization',
+  localField: '_id',
+  foreignField: 'userId',
+  justOne: false
+});
+
 // Sign JWT and return
-UserSchema.methods.getSignedJwtToken = function() {
+UserSchema.methods.getSignedJwtToken = function(activeOrgId = null, activeOrgRole = null) {
+  // Base token payload
+  const payload = { 
+    id: this._id
+  };
+  
+  // If active organization is provided, include it in the token
+  if (activeOrgId) {
+    payload.activeOrgId = activeOrgId;
+    if (activeOrgRole) {
+      payload.activeOrgRole = activeOrgRole;
+    }
+  }
+  
   return jwt.sign(
-    { 
-      id: this._id,
-      organizationId: this.organizationId,
-      role: this.role
-    }, 
+    payload, 
     process.env.JWT_SECRET, 
     {
       expiresIn: process.env.JWT_EXPIRE
