@@ -1,21 +1,45 @@
 const Task = require('../models/Task');
 const User = require('../models/User');
+const UserOrganization = require('../models/UserOrganization');
 
 // @desc    Create new task
 // @route   POST /api/tasks
 // @access  Private
 exports.createTask = async (req, res) => {
   try {
-    const { title, description, status, priority, dueDate, assignedTo, tags } = req.body;
+    const { title, description, status, priority, dueDate, assignedTo, tags, organizationId } = req.body;
     
     // Set the userId to the current authenticated user
     req.body.userId = req.user.id;
     
-    // Set the organizationId to the user's organization
-    req.body.organizationId = req.user.organizationId;
+    // Check if organizationId is provided, otherwise use activeOrgId from token
+    const taskOrgId = organizationId || req.user.activeOrgId;
+    
+    if (!taskOrgId) {
+      return res.status(400).json({
+        success: false,
+        error: 'No active organization. Please specify organizationId or set an active organization.'
+      });
+    }
+    
+    req.body.organizationId = taskOrgId;
+    
+    // Verify user is a member of this organization
+    const userMembership = await UserOrganization.findOne({
+      userId: req.user.id,
+      organizationId: taskOrgId
+    });
+    
+    if (!userMembership) {
+      return res.status(403).json({
+        success: false,
+        error: 'Not authorized to create tasks in this organization'
+      });
+    }
     
     // If task is assigned to someone, verify they're in the same organization
     if (assignedTo) {
+      // Check if assigned user exists
       const assignedUser = await User.findById(assignedTo);
       
       if (!assignedUser) {
@@ -25,7 +49,13 @@ exports.createTask = async (req, res) => {
         });
       }
       
-      if (assignedUser.organizationId.toString() !== req.user.organizationId.toString()) {
+      // Check if assigned user is a member of this organization
+      const assignedUserMembership = await UserOrganization.findOne({
+        userId: assignedTo,
+        organizationId: taskOrgId
+      });
+      
+      if (!assignedUserMembership) {
         return res.status(400).json({
           success: false,
           error: 'Cannot assign task to user from another organization'
@@ -59,20 +89,38 @@ exports.createTask = async (req, res) => {
 // @access  Private
 exports.getTasks = async (req, res) => {
   try {
-    let query;
+    // Check if organizationId is provided in query or use activeOrgId from token
+    const organizationId = req.query.organizationId || req.user.activeOrgId;
+    
+    if (!organizationId) {
+      return res.status(400).json({
+        success: false,
+        error: 'No active organization. Please specify organizationId or set an active organization.'
+      });
+    }
+    
+    // Verify user is a member of this organization
+    const userMembership = await UserOrganization.findOne({
+      userId: req.user.id,
+      organizationId
+    });
+    
+    if (!userMembership) {
+      return res.status(403).json({
+        success: false,
+        error: 'Not authorized to access tasks in this organization'
+      });
+    }
+    
+    let query = { organizationId };
     
     // If admin and showAll query param is true, show all tasks in the organization
-    if (req.user.role === 'admin' && req.query.showAll === 'true') {
-      query = { organizationId: req.user.organizationId };
-    } else {
-      // Show tasks created by or assigned to the user
-      query = {
-        organizationId: req.user.organizationId,
-        $or: [
-          { userId: req.user.id },
-          { assignedTo: req.user.id }
-        ]
-      };
+    // Otherwise show tasks created by or assigned to the user
+    if (!(userMembership.role === 'admin' && req.query.showAll === 'true')) {
+      query.$or = [
+        { userId: req.user.id },
+        { assignedTo: req.user.id }
+      ];
     }
     
     // Filter by status if provided
@@ -88,10 +136,25 @@ exports.getTasks = async (req, res) => {
     // Search by title or description
     if (req.query.search) {
       const searchRegex = new RegExp(req.query.search, 'i');
-      query.$or = [
-        { title: searchRegex },
-        { description: searchRegex }
-      ];
+      if (query.$or) {
+        // We already have an $or operator for filtering by user
+        // Create a compound query with $and to combine both conditions
+        const userFilter = query.$or;
+        delete query.$or;
+        
+        query.$and = [
+          { $or: userFilter },
+          { $or: [
+            { title: searchRegex },
+            { description: searchRegex }
+          ]}
+        ];
+      } else {
+        query.$or = [
+          { title: searchRegex },
+          { description: searchRegex }
+        ];
+      }
     }
     
     // Filter by tag
@@ -153,8 +216,13 @@ exports.getTask = async (req, res) => {
       });
     }
     
-    // Check if user has access to this task (must be in same organization)
-    if (task.organizationId.toString() !== req.user.organizationId.toString()) {
+    // Check if user has access to this task's organization
+    const userMembership = await UserOrganization.findOne({
+      userId: req.user.id,
+      organizationId: task.organizationId
+    });
+    
+    if (!userMembership) {
       return res.status(403).json({
         success: false,
         error: 'Not authorized to access this task'
@@ -187,8 +255,13 @@ exports.updateTask = async (req, res) => {
       });
     }
     
-    // Check if user has access to update this task
-    if (task.organizationId.toString() !== req.user.organizationId.toString()) {
+    // Check if user has access to this task's organization
+    const userMembership = await UserOrganization.findOne({
+      userId: req.user.id,
+      organizationId: task.organizationId
+    });
+    
+    if (!userMembership) {
       return res.status(403).json({
         success: false,
         error: 'Not authorized to update this task'
@@ -199,7 +272,7 @@ exports.updateTask = async (req, res) => {
     if (
       task.userId.toString() !== req.user.id && 
       (task.assignedTo ? task.assignedTo.toString() !== req.user.id : true) && 
-      req.user.role !== 'admin'
+      userMembership.role !== 'admin'
     ) {
       return res.status(403).json({
         success: false,
@@ -218,7 +291,13 @@ exports.updateTask = async (req, res) => {
         });
       }
       
-      if (assignedUser.organizationId.toString() !== req.user.organizationId.toString()) {
+      // Check if assigned user is a member of this organization
+      const assignedUserMembership = await UserOrganization.findOne({
+        userId: req.body.assignedTo,
+        organizationId: task.organizationId
+      });
+      
+      if (!assignedUserMembership) {
         return res.status(400).json({
           success: false,
           error: 'Cannot assign task to user from another organization'
@@ -269,8 +348,13 @@ exports.deleteTask = async (req, res) => {
       });
     }
     
-    // Check if user has access to delete this task
-    if (task.organizationId.toString() !== req.user.organizationId.toString()) {
+    // Check if user has access to this task's organization
+    const userMembership = await UserOrganization.findOne({
+      userId: req.user.id,
+      organizationId: task.organizationId
+    });
+    
+    if (!userMembership) {
       return res.status(403).json({
         success: false,
         error: 'Not authorized to delete this task'
@@ -278,7 +362,7 @@ exports.deleteTask = async (req, res) => {
     }
     
     // Only creator or admin can delete task
-    if (task.userId.toString() !== req.user.id && req.user.role !== 'admin') {
+    if (task.userId.toString() !== req.user.id && userMembership.role !== 'admin') {
       return res.status(403).json({
         success: false,
         error: 'Not authorized to delete this task'
