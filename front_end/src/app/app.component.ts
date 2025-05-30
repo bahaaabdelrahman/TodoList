@@ -14,13 +14,6 @@ export class AppComponent {
     title = 'my-todo-app';
     constructor(private authService: AuthService, private router: Router) {}
 
-    logout(): void {
-      this.authService.logout();
-      this.router.navigate(['/login']);
-    }
 
-    isLoggedIn(): boolean {
-      return this.authService.isLoggedIn();
-    }
   }
 

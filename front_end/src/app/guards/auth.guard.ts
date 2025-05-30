@@ -10,12 +10,18 @@ export class AuthGuard implements CanActivate {
   constructor(private authService: AuthService, private router: Router) {}
 
   canActivate(): boolean {
-    if (this.authService.isLoggedIn()) {
-      return true;
-    } else {
+    const isLoggedIn = this.authService.isLoggedIn();
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+    if (!isLoggedIn) {
       this.router.navigate(['/login']);
       return false;
     }
+
+    // السماح لجميع المستخدمين للدخول عدا مسارات خاصة بالـ admin فقط
+    // مثلا لو أردت حماية مسارات محددة فقط للادمن يمكنك عمل Guard خاص
+    return true;
   }
+
 }
 

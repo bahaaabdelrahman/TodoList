@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { TodoService, Todo } from '../../services/todo.service';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
+import { AuthService } from '../../services/auth.service';
+
 
 @Component({
   selector: 'app-todo',
@@ -25,9 +27,19 @@ export class TodoComponent implements OnInit {
   doneListId = 'done-list';
 
 
-  constructor(private todoService: TodoService, private fb: FormBuilder) {}
+  constructor(private todoService: TodoService, private fb: FormBuilder, private authService: AuthService) {}
 
   ngOnInit(): void {
+
+    this.authService.getCurrentUser().subscribe({
+      next: user => {
+        console.log('المستخدم الحالي:', user);
+      },
+      error: err => {
+        console.error('فشل في جلب المستخدم:', err);
+      }
+    });
+
     this.todoForm = this.fb.group({
       title: ['', Validators.required],
       priority: ['medium', Validators.required],
@@ -121,5 +133,13 @@ export class TodoComponent implements OnInit {
     const allTodos = [...this.activeTodos, ...this.progressTodos, ...this.doneTodos];
     this.todoService.saveTodos(allTodos);
     this.loadTodos();
+  }
+
+  logout(): void {
+    this.authService.logout();
+  }
+
+  isLoggedIn(): boolean {
+    return this.authService.isLoggedIn();
   }
 }

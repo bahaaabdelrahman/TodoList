@@ -1,0 +1,40 @@
+<div class="sign">
+
+  <div class="con">
+
+<h2 class="signup-title">Register A New Account</h2>
+<form class="signup-form" (ngSubmit)="register()" #registerForm="ngForm">
+
+<div class="form-group">
+    <input class="form-control" type="text" name="name" [(ngModel)]="userData.name" required placeholder="Name" />
+</div>
+
+
+<div class="form-group">
+    <input class="form-control" type="email" name="email" placeholder="Email" [(ngModel)]="userData.email" required />
+</div>
+
+<div class="form-group">
+    <input class="form-control" type="password" name="password" placeholder="Password" [(ngModel)]="userData.password" required />
+</div>
+
+<div class="form-group">
+    <input class="form-control" type="text" name="OrganizationName" placeholder="Organization Name" [(ngModel)]="userData.organizationName" required />
+</div>
+
+<div class="form-group">
+    <input class="form-control" type="text" name="OrganizationDescription" placeholder="Organization Description" [(ngModel)]="userData.organizationDescription" required />
+</div>
+
+  <button class="submit-button" type="submit" >Sign Up</button>
+</form>
+
+<div *ngIf="message" [ngClass]="{'success': messageType === 'success', 'error': messageType === 'error'}">
+  {{ message }}
+</div>
+
+
+</div>
+
+</div>
+
