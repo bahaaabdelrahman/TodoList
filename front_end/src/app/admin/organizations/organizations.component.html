@@ -1,0 +1,56 @@
+<div class="container">
+
+  <h2 class="section-title">Create Organization</h2>
+  <form [formGroup]="createForm" (ngSubmit)="createOrganization()" class="form">
+    <input formControlName="name" placeholder="Name" class="input" />
+    <input formControlName="description" placeholder="Description" class="input" />
+    <button type="submit"  class="btn">Create</button>
+  </form>
+
+  <hr class="divider" />
+
+  <button (click)="loadOrganizations()" class="btn btn-secondary">Show All Organizations</button>
+
+  <h2 class="section-title">All Organizations</h2>
+  <ul class="list" *ngIf="showOrganizations">
+    <li *ngFor="let org of organizations" (click)="selectOrganization(org._id)" class="list-item">
+      <div>
+        <strong>{{ org.name }}</strong>: {{ org.description }}
+      </div>
+      <button (click)="selectOrganization(org._id); $event.stopPropagation()" class="btn btn-small">Select</button>
+    </li>
+  </ul>
+
+  <hr class="divider" />
+
+  <div >
+
+    <h2 class="section-title">Update Selected Organization</h2>
+    <form [formGroup]="updateForm" (ngSubmit)="updateOrganization()" class="form">
+      <input formControlName="name" placeholder="New Name" class="input" />
+      <input formControlName="description" placeholder="New Description" class="input" />
+      <button type="submit"  class="btn">Update</button>
+    </form>
+
+    <hr class="divider" />
+
+    <h2 class="section-title">Add User to Selected Organization</h2>
+    <form [formGroup]="userForm" (ngSubmit)="addUserToOrganization()" class="form">
+      <input formControlName="name" placeholder="User Name" class="input" />
+      <input formControlName="email" placeholder="Email" type="email" class="input" />
+      <input formControlName="password" placeholder="Password" type="password" class="input" />
+      <input formControlName="role" placeholder="Role (e.g. admin)" class="input" />
+      <button type="submit"  class="btn">Add User</button>
+    </form>
+
+    <hr class="divider" />
+
+    <h2 class="section-title">Remove User from Selected Organization</h2>
+    <form [formGroup]="removeForm" (ngSubmit)="removeUserFromOrganization()" class="form">
+      <input formControlName="userId" placeholder="User ID" type="number" class="input" />
+      <button type="submit"  class="btn">Remove User</button>
+    </form>
+
+  </div>
+
+</div>

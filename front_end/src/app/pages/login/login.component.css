@@ -104,3 +104,13 @@
     font-size: 15px;
   }
 }
+
+
+.success {
+  color: green;
+}
+
+.error {
+  color: red;
+}
+

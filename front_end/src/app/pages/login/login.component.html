@@ -4,24 +4,27 @@
 
   <h2 class="login-title">Login</h2>
 
-  <form (ngSubmit)="onLogin()" class="login-form">
+  <form (ngSubmit)="login()" #loginForm="ngForm" class="login-form">
     <div class="form-group">
-      <input type="email" [(ngModel)]="email" name="email" placeholder="Email" required class="form-control" />
+      <input type="email" [(ngModel)]="credentials.email" name="email" placeholder="Email" required class="form-control" />
     </div>
 
     <div class="form-group">
-      <input type="password" [(ngModel)]="password" name="password" placeholder="Password" required
+      <input type="password" [(ngModel)]="credentials.password" name="password" placeholder="Password" required
         class="form-control" />
     </div>
 
     <button type="submit" class="submit-button">Login</button>
 
-    <p *ngIf="loginError" class="error-message">Invalid credentials</p>
   </form>
 
   <p class="signup-link">
-    <a routerLink="/signup">Don't have an account? Sign up</a>
+    <a routerLink="/register">Don't have an account? Sign up</a>
     </p>
+
+    <div *ngIf="message" [ngClass]="{ 'success': messageType === 'success', 'error': messageType === 'error' }">
+      {{ message }}
+      </div>
 
   </div>
 
