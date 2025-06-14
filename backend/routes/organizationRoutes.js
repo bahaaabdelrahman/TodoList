@@ -1,4 +1,4 @@
-const express = require('express');
+const express = require("express");
 const {
   createOrganization,
   getOrganizations,
@@ -6,9 +6,9 @@ const {
   updateOrganization,
   deleteOrganization,
   addUserToOrganization,
-  removeUserFromOrganization
-} = require('../controllers/organizationController');
-const { protect, authorize } = require('../middleware/auth');
+  removeUserFromOrganization,
+} = require("../controllers/organizationController");
+const { protect, authorize } = require("../middleware/auth");
 
 const router = express.Router();
 
@@ -45,8 +45,10 @@ const router = express.Router();
  * /api/organizations:
  *   post:
  *     summary: Create new organization
- *     description: Create a new organization
+ *     description: Create a new organization. The authenticated user will be set as the organization admin.
  *     tags: [Organizations]
+ *     security:
+ *       - BearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -64,7 +66,7 @@ const router = express.Router();
  *                 description: Organization description
  *     responses:
  *       201:
- *         description: Organization created
+ *         description: Organization created successfully
  *         content:
  *           application/json:
  *             schema:
@@ -74,14 +76,23 @@ const router = express.Router();
  *                   type: boolean
  *                   example: true
  *                 data:
- *                   $ref: '#/components/schemas/Organization'
+ *                   type: object
+ *                   properties:
+ *                     organization:
+ *                       $ref: '#/components/schemas/Organization'
+ *                     token:
+ *                       type: string
+ *                       description: JWT token with organization context
  *       400:
  *         description: Bad request - Organization with this name already exists
+ *       401:
+ *         description: Unauthorized - Invalid or missing authentication token
  */
-router.post('/', createOrganization);
 
 // Protect all routes below
 router.use(protect);
+
+router.post("/", createOrganization);
 
 /**
  * @swagger
@@ -119,20 +130,20 @@ router.use(protect);
  *       404:
  *         description: Organization not found
  */
-router.get('/:id', getOrganization);
+router.get("/:id", getOrganization);
 
 /**
  * @swagger
  * /api/organizations:
  *   get:
- *     summary: Get all organizations
- *     description: Get a list of all organizations (admin only)
+ *     summary: Get user's organizations
+ *     description: Get a list of organizations that the current user is a member of
  *     tags: [Organizations]
  *     security:
  *       - BearerAuth: []
  *     responses:
  *       200:
- *         description: List of organizations
+ *         description: List of user's organizations
  *         content:
  *           application/json:
  *             schema:
@@ -147,15 +158,18 @@ router.get('/:id', getOrganization);
  *                 data:
  *                   type: array
  *                   items:
- *                     $ref: '#/components/schemas/Organization'
+ *                     allOf:
+ *                       - $ref: '#/components/schemas/Organization'
+ *                       - type: object
+ *                         properties:
+ *                           userRole:
+ *                             type: string
+ *                             enum: [admin, member]
+ *                             description: User's role in this organization
  *       401:
  *         description: Not authorized
- *       403:
- *         description: Forbidden - admin access required
  */
-router
-  .route('/')
-  .get(authorize('admin'), getOrganizations);
+router.route("/").get(getOrganizations);
 
 /**
  * @swagger
@@ -243,9 +257,9 @@ router
  *         description: Organization not found
  */
 router
-  .route('/:id')
-  .put(authorize('admin'), updateOrganization)
-  .delete(authorize('admin'), deleteOrganization);
+  .route("/:id")
+  .put(authorize("admin"), updateOrganization)
+  .delete(authorize("admin"), deleteOrganization);
 
 /**
  * @swagger
@@ -312,9 +326,7 @@ router
  *       404:
  *         description: Organization not found
  */
-router
-  .route('/:id/users')
-  .post(authorize('admin'), addUserToOrganization);
+router.route("/:id/users").post(authorize("admin"), addUserToOrganization);
 
 /**
  * @swagger
@@ -362,7 +374,7 @@ router
  *         description: Organization or user not found
  */
 router
-  .route('/:id/users/:userId')
-  .delete(authorize('admin'), removeUserFromOrganization);
+  .route("/:id/users/:userId")
+  .delete(authorize("admin"), removeUserFromOrganization);
 
 module.exports = router;
