@@ -1,0 +1,20 @@
+<h2 class="action-title">Organization Actions</h2>
+
+<div *ngIf="actions.length === 0" class="no-actions">
+  No actions found for this organization.
+</div>
+
+<div *ngFor="let action of actions" class="action-card">
+  <div class="action-header">
+    <strong>{{ action.type | titlecase }}</strong>
+    <span *ngIf="action.completedAt" class="completed-date">
+      Completed at: {{ action.completedAt | date:'shortDate' }}
+    </span>
+  </div>
+  <p class="action-description">{{ action.description }}</p>
+
+  <div class="action-buttons">
+    <button class="btn-update" (click)="updateAction(action)">Update</button>
+    <button class="btn-delete" (click)="deleteAction(action)">Delete</button>
+  </div>
+</div>

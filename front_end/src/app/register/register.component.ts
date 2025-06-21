@@ -1,6 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AuthService } from '../services/auth.service';
 import { Router } from '@angular/router';
+import { jwtDecode } from 'jwt-decode';
 
 
 @Component({
@@ -9,7 +11,9 @@ import { Router } from '@angular/router';
   templateUrl: './register.component.html',
   styleUrl: './register.component.css'
 })
-export class RegisterComponent {
+export class RegisterComponent implements OnInit{
+
+  registerForm!: FormGroup;
 
   userData = {
     name: '',
@@ -22,24 +26,42 @@ export class RegisterComponent {
   message: string = '';
   messageType: 'success' | 'error' = 'success';
 
-  constructor(private authService: AuthService, private router: Router) {}
+  constructor(private authService: AuthService, private router: Router, private fb: FormBuilder) {}
+  ngOnInit(): void {
+    this.registerForm = this.fb.group({
+      name: ['', Validators.required],
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(6)]],
+      organizationName: ['', Validators.required],
+      organizationDescription: ['', Validators.required]
+    });
+  }
 
   register() {
-
     this.authService.register(this.userData).subscribe({
       next: (res) => {
         localStorage.setItem('token', res.token);
-        this.message = 'You have successfully logged in.';
+
+        if (res.data?.activeOrganization?._id) {
+          localStorage.setItem('organizationId', res.data.activeOrganization._id);
+        }
+
+
+        const decoded = jwtDecode(res.token);
+        localStorage.setItem('user', JSON.stringify(decoded));
+
+        this.message = 'You have successfully registered.';
         this.messageType = 'success';
+
         this.router.navigate(['/todo']);
       },
       error: (err) => {
-        this.message = 'Login failed. Please check your email and password.';
+        this.message = err.error?.error || 'Registration failed. Please try again.';
         this.messageType = 'error';
-        this.router.navigate(['/login']);
       }
     });
   }
+
 
   goToSignup() {
     this.router.navigate(['/todo']);

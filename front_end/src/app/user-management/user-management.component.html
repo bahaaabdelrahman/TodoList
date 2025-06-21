@@ -1,0 +1,45 @@
+<h2 class="user-title">User Management</h2>
+
+<table class="user-table">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Email</th>
+      <th>Role</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let user of users">
+      <td>{{ user.name }}</td>
+      <td>{{ user.email }}</td>
+      <td>{{ user.role }}</td>
+      <td>
+        <button class="btn edit" (click)="selectUser(user)">Edit</button>
+        <button class="btn delete" (click)="deleteUser(user._id!)">Delete</button>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="edit-form-container" *ngIf="selectedUser">
+  <h3>Edit User</h3>
+  <form [formGroup]="editForm" (ngSubmit)="updateUser()" class="edit-form">
+    <label>Name:</label>
+    <input formControlName="name" type="text" />
+
+    <label>Email:</label>
+    <input formControlName="email" type="email" />
+
+    <label>Role:</label>
+    <select formControlName="role">
+      <option value="user">User</option>
+      <option value="admin">Admin</option>
+    </select>
+
+    <div class="form-buttons">
+      <button class="btn save" type="submit">Save</button>
+      <button class="btn cancel" type="button" (click)="selectedUser = null">Cancel</button>
+    </div>
+  </form>
+</div>

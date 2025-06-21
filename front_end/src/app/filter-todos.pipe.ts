@@ -9,10 +9,14 @@ import { Todo } from './services/todo.service';
 })
 export class FilterTodosPipe implements PipeTransform {
 
-  transform(todo: Todo[],filter: 'all' | 'active' | 'completed'): Todo[] {
-    if(filter === 'active') return todo.filter(t => !t.completed)
-      if(filter === 'completed') return todo.filter(t => t.completed)
-    return todo;
+  transform(todos: Todo[], filter: 'all' | 'active' | 'completed'): Todo[] {
+    if (filter === 'active') {
+      return todos.filter(t => t.status === 'todo' || t.status === 'in-progress');
+    }
+    if (filter === 'completed') {
+      return todos.filter(t => t.status === 'completed');
+    }
+    return todos;
   }
 
 }

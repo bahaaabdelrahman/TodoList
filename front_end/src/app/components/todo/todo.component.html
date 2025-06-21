@@ -1,4 +1,18 @@
-<button (click)="logout()">Logout</button>
+
+<!-- blur -->
+<div [ngClass]="{ 'blur-content': showOrganizationPopup }">
+
+  <div class="header-bar">
+    <div class="header-left">
+      <h3 class="app-title">My ToDo App</h3>
+    </div>
+
+    <div class="header-right">
+      <a class="action-link" [routerLink]="['/actions']" [queryParams]="{ id: organizationId }">
+          View Organization Actions  </a>
+      <button class="logout-btn" (click)="logout()">Logout</button>
+    </div>
+    </div>
 
 
 <div class="todo-container" cdkDropListGroup>
@@ -34,7 +48,7 @@
     <p class="item-count">{{ activeTodos.length }} item{{ activeTodos.length !== 1 ? 's' : '' }} left</p>
 
     <!-- Drop zone for Active column -->
-    <div class="todo-list-wrapper drop-zone" cdkDropList [id]="activeListId" [cdkDropListData]="activeTodos"
+    <div class="todo-list-wrapper drop-zone active" cdkDropList [id]="activeListId" [cdkDropListData]="activeTodos"
       [cdkDropListConnectedTo]="[progressListId]" (cdkDropListDropped)="drop($event)">
 
 
@@ -51,7 +65,7 @@
               }">
             <div class="conten">
               <span class="span">{{ todo.title }}</span>
-              <button class="delete-btn" color="warn" (click)="deleteTodo(todo.id)" aria-label="Delete todo">delete</button>
+              <button class="delete-btn" color="warn" (click)="deleteTodo(todo)" aria-label="Delete todo">delete</button>
                           </div>
             <div *cdkDragPlaceholder class="todo-placeholder"></div>
           </div>
@@ -66,7 +80,7 @@
     <p class="item-count">{{ progressTodos.length }} item{{ progressTodos.length !== 1 ? 's' : '' }} left</p>
 
     <div class="todo-list-wrapper drop-zone" cdkDropList [id]="progressListId" [cdkDropListData]="progressTodos"
-      [cdkDropListConnectedTo]="[activeListId, doneListId]" (cdkDropListDropped)="drop($event)">
+      [cdkDropListConnectedTo]="[activeListId, completedListId]" (cdkDropListDropped)="drop($event)">
 
 
       <ng-container *ngFor="let priority of priorities">
@@ -80,7 +94,7 @@
               }">
             <div class="conten">
               <span class="span">{{ todo.title }}</span>
-              <button class="delete-btn" color="warn" (click)="deleteTodo(todo.id)" aria-label="Delete todo">delete</button>
+              <button class="delete-btn" color="warn" (click)="deleteTodo(todo)" aria-label="Delete todo">delete</button>
             </div>
             <div *cdkDragPlaceholder class="todo-placeholder"></div>
           </div>
@@ -92,17 +106,16 @@
   <!-- Done Column -->
   <div class="list-column">
     <h2 class="head">Done</h2>
-    <p class="item-count">{{ doneTodos.length }} item{{ doneTodos.length !== 1 ? 's' : '' }} completed</p>
+    <p class="item-count">{{ completedTodos.length }} item{{ completedTodos.length !== 1 ? 's' : '' }} completed</p>
 
-    <div class="todo-list-wrapper drop-zone" cdkDropList [id]="doneListId" [cdkDropListData]="doneTodos"
+    <div class="todo-list-wrapper drop-zone" cdkDropList [id]="completedListId" [cdkDropListData]="completedTodos"
       [cdkDropListConnectedTo]="[]" (cdkDropListDropped)="drop($event)">
 
 
       <ng-container *ngFor="let priority of priorities">
-        <div *ngIf="getTodosByPriority(doneTodos, priority).length > 0" class="priority-group">
+        <div *ngIf="getTodosByPriority(completedTodos, priority).length > 0" class="priority-group">
           <h4 class="priority-label">{{ priority | titlecase }} Priority</h4>
-          <!-- Note [cdkDragDisabled]="true" to prevent dragging from this list -->
-          <div *ngFor="let todo of getTodosByPriority(doneTodos, priority); trackBy: trackById" cdkDrag
+          <div *ngFor="let todo of getTodosByPriority(completedTodos, priority); trackBy: trackById" cdkDrag
             [cdkDragData]="todo" class="todo-item done-item" [ngClass]="{
             'high-priority': todo.priority === 'high',
             'medium-priority': todo.priority === 'medium',
@@ -110,7 +123,7 @@
             }">
             <div class="conten">
               <span class="span">{{ todo.title }}</span>
-              <button class="delete-btn" color="warn" (click)="deleteTodo(todo.id)" aria-label="Delete todo">delete</button>
+              <button class="delete-btn" color="warn" (click)="deleteTodo(todo)" aria-label="Delete todo">delete</button>
             </div>
             <div *cdkDragPlaceholder class="todo-placeholder"></div>
           </div>
@@ -122,6 +135,14 @@
 
 
 </div>
+
+</div>
+
+<!-- Popup To Select Organization -->
+<app-select-organization *ngIf="showOrganizationPopup" (organizationSelected)="onOrganizationSelected()">
+</app-select-organization>
+
+
 
 
 

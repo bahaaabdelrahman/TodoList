@@ -1,0 +1,19 @@
+<!-- select-organization.component.html -->
+<div class="overlay">
+  <div class="popup-box">
+    <h2>Select Organization</h2>
+
+    <div *ngIf="message" [ngClass]="{'success': messageType === 'success', 'error': messageType === 'error'}">
+      {{ message }}
+    </div>
+
+    <select [(ngModel)]="selectedOrgId">
+      <option value="" disabled selected>Select an organization</option>
+      <option *ngFor="let org of organizations" [value]="org._id">
+        {{ org.name }}
+      </option>
+    </select>
+
+    <button (click)="confirmSelection()">Confirm Selection</button>
+  </div>
+</div>

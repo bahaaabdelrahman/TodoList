@@ -1,145 +1,215 @@
+import { AppAction } from './../../action.model';
 import { Component, OnInit } from '@angular/core';
-import { TodoService, Todo } from '../../services/todo.service';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
+import { TodoService, Todo } from '../../services/todo.service';
 import { AuthService } from '../../services/auth.service';
+import { CdkDragDrop, transferArrayItem } from '@angular/cdk/drag-drop';
+import { ActionService } from '../../services/action.service';
+import { ActivatedRoute } from '@angular/router';
+
+
+
 
 
 @Component({
   selector: 'app-todo',
+  standalone: false,
   templateUrl: './todo.component.html',
   styleUrls: ['./todo.component.css'],
-  standalone: false,
 })
-export class TodoComponent implements OnInit {
+      export class TodoComponent implements OnInit {
+        action?: AppAction; // ✅ تعريف المتغير
+        todoForm!: FormGroup;
+        activeTodos: Todo[] = [];
+        progressTodos: Todo[] = [];
+        completedTodos: Todo[] = [];
 
-  priorities: ('high' | 'medium' | 'low')[] = ['high', 'medium', 'low'];
+        priorities: ('high' | 'medium' | 'low')[] = ['high', 'medium', 'low'];
 
-  todoForm!: FormGroup;
+        activeListId = 'active';
+        progressListId = 'progress';
+        completedListId = 'completed';
 
-  activeTodos: Todo[] = [];
-  progressTodos: Todo[] = [];
-  doneTodos: Todo[] = [];
+        // ✅ هنا تضيفهم
+        showOrganizationPopup: boolean = false;
+        organizationId!: string;
 
+        constructor(
+          private fb: FormBuilder,
+          private todoService: TodoService,
+          private authService: AuthService,
+          private route: ActivatedRoute,
+          private actionService: ActionService
+  ) {}
 
-  activeListId = 'active-list';
-  progressListId = 'progress-list';
-  doneListId = 'done-list';
-
-
-  constructor(private todoService: TodoService, private fb: FormBuilder, private authService: AuthService) {}
 
   ngOnInit(): void {
-
-    this.authService.getCurrentUser().subscribe({
-      next: user => {
-        console.log('المستخدم الحالي:', user);
-      },
-      error: err => {
-        console.error('فشل في جلب المستخدم:', err);
-      }
-    });
-
     this.todoForm = this.fb.group({
       title: ['', Validators.required],
-      priority: ['medium', Validators.required],
+      priority: ['medium', Validators.required]
     });
+
+    const storedOrgId = localStorage.getItem('organizationId');
+    this.showOrganizationPopup = !storedOrgId;
+
+    if (!storedOrgId) {
+      return;
+    }
+
+    this.organizationId = storedOrgId;
     this.loadTodos();
+
+
+    this.route.queryParams.subscribe(params => {
+      const actionId = params['actionId'];
+      if (actionId) {
+        this.actionService.getActionById(actionId).subscribe({
+          next: (res) => {
+            this.action = res;
+          },
+          error: (err) => {
+            console.error('فشل في تحميل الأكشن:', err);
+          }
+        });
+      }
+    });
   }
+
+
+
 
   loadTodos(): void {
-    const allTodos = this.todoService.getTodos();
-    this.activeTodos = allTodos.filter(t => t.status === 'active');
-    this.progressTodos = allTodos.filter(t => t.status === 'progress');
-    this.doneTodos = allTodos.filter(t => t.status === 'done');
+    this.todoService.getTodos(this.organizationId).subscribe({
+      next: (res: any) => {
+        const todos: Todo[] = res.data || [];
 
-    this.sortListByPriority(this.activeTodos);
-    this.sortListByPriority(this.progressTodos);
-    this.sortListByPriority(this.doneTodos);
-  }
-
-
-  sortListByPriority(list: Todo[]): void {
-    const priorityOrder = { 'high': 1, 'medium': 2, 'low': 3 };
-    list.sort((a, b) => {
-        const priorityDiff = priorityOrder[a.priority] - priorityOrder[b.priority];
-        if (priorityDiff !== 0) {
-            return priorityDiff;
-        }
-        return 0;
+        this.activeTodos = this.sortTodos(todos.filter(t => t.status === 'todo'));
+        this.progressTodos = this.sortTodos(todos.filter(t => t.status === 'in-progress'));
+        this.completedTodos = this.sortTodos(todos.filter(t => t.status === 'completed'));
+      },
+      error: (err) => {
+        console.error('Error loading todos:', err);
+        alert('Failed to load tasks');
+      }
     });
   }
 
-  trackById(index: number, item: Todo): number {
-    return item.id;
-  }
-
-  getTodosByPriority(list: Todo[], priority: 'high' | 'medium' | 'low'): Todo[] {
-    return list.filter(todo => todo.priority === priority);
+  sortTodos(todos: Todo[]): Todo[] {
+    const priorityOrder = { high: 1, medium: 2, low: 3 };
+    return [...todos].sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
   }
 
   addTodo(): void {
-    if (this.todoForm.invalid) {
-        this.todoForm.markAllAsTouched();
-        return;
-    }
-    const { title, priority } = this.todoForm.value;
-    if (!title.trim()) return;
+    if (this.todoForm.invalid) return;
 
-    this.todoService.addTodo(title.trim(), priority);
-    this.todoForm.reset({ priority: 'medium', title: '' });
-    this.loadTodos();
+    const formValues = this.todoForm.value;
+
+    const newTodo: Todo = {
+      title: formValues.title,
+      description: formValues.title,
+      status: 'todo',
+      priority: formValues.priority,
+      dueDate: new Date().toISOString().split('T')[0],
+      tags: [],
+      organizationId: this.organizationId
+    };
+
+    this.todoService.addTodo(newTodo).subscribe({
+      next: (res) => {
+        this.activeTodos.unshift(res.data);
+        this.activeTodos = this.sortTodos(this.activeTodos);
+        this.todoForm.reset({ priority: 'medium' });
+      },
+      error: (err) => {
+        console.error('Error adding todo:', err);
+        alert('Failed to add task');
+      }
+    });
   }
 
-  deleteTodo(id: number): void {
-    this.todoService.deleteTodo(id);
-    this.loadTodos();
+  deleteTodo(todo: Todo): void {
+    if (!todo._id) return;
+
+    this.todoService.deleteTodo(todo._id).subscribe({
+      next: () => this.loadTodos(),
+      error: (err) => {
+        console.error('Error deleting todo:', err);
+        alert('Failed to delete task');
+      }
+    });
   }
 
   drop(event: CdkDragDrop<Todo[]>): void {
-    const previousContainerId = event.previousContainer.id;
-    const currentContainerId = event.container.id;
-    const movedItem = event.item.data as Todo;
-    if (event.previousContainer === event.container) {
-      moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
-    } else {
-      if (previousContainerId === this.doneListId) {
-        return;
-      }
+    const prevStatus = event.previousContainer.id as 'active' | 'progress' | 'completed';
+    const currStatus = event.container.id as 'active' | 'progress' | 'completed';
 
-      if (currentContainerId === this.doneListId && previousContainerId !== this.progressListId) {
-        return;
-      }
+    const statusMap: Record<'active' | 'progress' | 'completed', 'todo' | 'in-progress' | 'completed'> = {
+      active: 'todo',
+      progress: 'in-progress',
+      completed: 'completed'
+    };
 
-      transferArrayItem(
-        event.previousContainer.data,
-        event.container.data,
-        event.previousIndex,
-        event.currentIndex
+    const isSameList = event.previousContainer === event.container;
+
+    if (prevStatus === 'completed' && currStatus !== 'completed' && !isSameList) return;
+
+    const validMove =
+      isSameList || (
+        (
+          (prevStatus === 'active' && currStatus === 'progress') ||
+          (prevStatus === 'progress' && (currStatus === 'active' || currStatus === 'completed'))
+        )
       );
 
-      if (currentContainerId === this.activeListId) {
-        movedItem.status = 'active';
-      } else if (currentContainerId === this.progressListId) {
-        movedItem.status = 'progress';
-      } else if (currentContainerId === this.doneListId) {
-        movedItem.status = 'done';
-      }
+    if (!validMove) return;
+
+    transferArrayItem(
+      event.previousContainer.data,
+      event.container.data,
+      event.previousIndex,
+      event.currentIndex
+    );
+
+    const movedTodo = event.container.data[event.currentIndex];
+
+    if (!isSameList) {
+      movedTodo.status = statusMap[currStatus];
+      this.todoService.updateTodoStatus(movedTodo, movedTodo.status).subscribe({
+        next: () => {
+        },
+        error: (err) => {
+          console.error('فشل في تحديث المهمة:', err);
+          alert('Failed to update mission after transfer');
+          this.loadTodos();
+        }
+      });
     }
-    this.updateAndSaveAllTodos();
   }
 
-  private updateAndSaveAllTodos(): void {
-    const allTodos = [...this.activeTodos, ...this.progressTodos, ...this.doneTodos];
-    this.todoService.saveTodos(allTodos);
-    this.loadTodos();
+
+
+  getTodosByPriority(list: Todo[], priority: string): Todo[] {
+    return list.filter(todo => todo.priority === priority);
+  }
+
+  trackById(index: number, item: Todo): string | undefined {
+    return item._id;
   }
 
   logout(): void {
     this.authService.logout();
   }
 
-  isLoggedIn(): boolean {
-    return this.authService.isLoggedIn();
+
+  onOrganizationSelected(): void {
+    this.showOrganizationPopup = false;
+
+    const storedOrgId = localStorage.getItem('organizationId');
+    if (storedOrgId) {
+      this.organizationId = storedOrgId;
+      this.loadTodos();
+    }
   }
+
+
 }

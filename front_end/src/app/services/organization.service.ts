@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { map } from 'rxjs/operators';
-
+import { AuthService } from './auth.service';
 
 export interface Organization {
   _id: string;
@@ -23,7 +23,7 @@ export interface UserToOrg {
 export class OrganizationService {
   private baseUrl = 'http://localhost:5000/api/organizations';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private authService: AuthService) {}
 
   createOrganization(data: { name: string; description: string }): Observable<any> {
     console.log('🔼 إرسال طلب إنشاء منظمة:', data);
@@ -36,7 +36,6 @@ export class OrganizationService {
     console.log('📥 طلب جميع المنظمات...');
     return this.http.get<{ success: boolean, data: Organization[] }>(`${this.baseUrl}`).pipe(
       tap(response => console.log('✅ تم استرجاع المنظمات:', response)),
-      // استخراج فقط مصفوفة المنظمات
       map(response => response.data)
     );
   }
@@ -59,6 +58,21 @@ export class OrganizationService {
     console.log(`❌ حذف مستخدم [ID: ${userId}] من المنظمة [ID: ${orgId}]`);
     return this.http.delete(`${this.baseUrl}/${orgId}/users/${userId}`).pipe(
       tap(response => console.log('✅ تم حذف المستخدم:', response))
+    );
+  }
+
+  // ✅ دالة تعيين المنظمة النشطة وتخزين التوكن الجديد
+  setActiveOrganization(organizationId: string): Observable<any> {
+    console.log('🏁 تعيين المنظمة النشطة:', organizationId);
+    return this.http.post<{ data: { token: string } }>(
+      `http://localhost:5000/api/users/organizations/active`,
+      { organizationId }
+    ).pipe(
+      tap(response => {
+        const token = response.data.token;
+        console.log('🔑 توكن جديد من السيرفر:', token);
+        this.authService.storeTokenData(token);
+      })
     );
   }
 }

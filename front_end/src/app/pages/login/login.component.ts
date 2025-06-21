@@ -1,8 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { Router } from '@angular/router';
 import { jwtDecode } from 'jwt-decode';
-
 
 interface DecodedToken {
   id: string;
@@ -12,51 +12,60 @@ interface DecodedToken {
   exp: number;
 }
 
-
 @Component({
   selector: 'app-login',
   standalone: false,
   templateUrl: './login.component.html',
-  styleUrl: './login.component.css'
+  styleUrls: ['./login.component.css']
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
 
-  credentials = {
-    email: '',
-    password: ''
-  };
-
+  loginForm!: FormGroup;
   message: string = '';
   messageType: 'success' | 'error' = 'success';
 
-  constructor(private authService: AuthService, private router: Router) {}
+  constructor(
+    private authService: AuthService,
+    private router: Router,
+    private fb: FormBuilder
+  ) {}
 
-  login() {
-    this.authService.login(this.credentials).subscribe({
+  ngOnInit(): void {
+    this.loginForm = this.fb.group({
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(6)]]
+    });
+  }
+
+  login(): void {
+    if (this.loginForm.invalid) return;
+
+    this.authService.login(this.loginForm.value).subscribe({
       next: (res) => {
-        console.log('✅ تم تسجيل الدخول بنجاح', res);
+        console.log('You have successfully logged in', res);
 
         if (res.token) {
-          // تخزين التوكن في localStorage
           localStorage.setItem('token', res.token);
 
-          // فك التوكن
           const decodedToken = jwtDecode<DecodedToken>(res.token);
-
-          // تخزين بيانات المستخدم في localStorage
           localStorage.setItem('user', JSON.stringify(decodedToken));
 
-          this.message = 'You have successfully logged in.';
+          this.message = 'You have successfully logged in';
           this.messageType = 'success';
 
-          // التوجيه حسب الدور
+          // ✅ تأكد من أن activeOrganization موجود
+          const activeOrgId = res?.activeOrganization?._id;
           if (decodedToken.role === 'admin') {
             this.router.navigate(['/organizations']);
           } else {
+            if (activeOrgId) {
+              localStorage.setItem('organizationId', activeOrgId);
+            }
             this.router.navigate(['/todo']);
           }
+
         } else {
-          this.message = 'No token received';
+          this.message = 'Token not received';
           this.messageType = 'error';
         }
       },
@@ -68,13 +77,4 @@ export class LoginComponent {
   }
 
 
-  goToLogin() {
-    this.router.navigate(['/todo']);
-  }
-
 }
-
-
-
-
-

@@ -47,7 +47,7 @@
 
     <h2 class="section-title">Remove User from Selected Organization</h2>
     <form [formGroup]="removeForm" (ngSubmit)="removeUserFromOrganization()" class="form">
-      <input formControlName="userId" placeholder="User ID" type="number" class="input" />
+      <input formControlName="userId" placeholder="User ID" type="text" class="input" />
       <button type="submit"  class="btn">Remove User</button>
     </form>
 

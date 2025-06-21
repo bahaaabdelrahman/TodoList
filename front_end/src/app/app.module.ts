@@ -20,6 +20,9 @@ import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http';
 import { RegisterComponent } from './register/register.component';
 import { AuthInterceptor } from './services/auth.interceptor';
 import { OrganizationsComponent } from './admin/organizations/organizations.component';
+import { SelectOrganizationComponent } from './select-organization/select-organization.component';
+import { UserManagementComponent } from './user-management/user-management.component';
+import { ActionListComponent } from './action-list/action-list.component';
 
 
 
@@ -31,7 +34,10 @@ import { OrganizationsComponent } from './admin/organizations/organizations.comp
     FilterTodosPipe,
     LoginComponent,
     RegisterComponent,
-    OrganizationsComponent
+    OrganizationsComponent,
+    SelectOrganizationComponent,
+    UserManagementComponent,
+    ActionListComponent,
   ],
   imports: [
     BrowserModule,
